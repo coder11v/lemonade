@@ -72,7 +72,6 @@
             </div>
         </form>
 
-        <!-- Placeholder for JavaScript form submission feedback -->
         <div id="formFeedback" class="mt-4 text-center"></div>
 
         <div class="mt-8 text-center">
@@ -82,72 +81,40 @@
         </div>
     </div>
 
-    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <!-- Add SDKs for Firebase products that you want to use, e.g., Firestore -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <!-- Link to your firebase.js file -->
-    <script src="firebase.js"></script>
+    <!-- firebase.js is now imported as an ES module -->
+    <script type="module">
+        import { initFirebase, addOrder } from './firebase.js';
 
-    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // TODO: Replace with your Firebase project's configuration object
-            // const firebaseConfig = {
-            //   apiKey: "YOUR_API_KEY",
-            //   authDomain: "YOUR_AUTH_DOMAIN",
-            //   projectId: "YOUR_PROJECT_ID",
-            //   storageBucket: "YOUR_STORAGE_BUCKET",
-            //   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            //   appId: "YOUR_APP_ID"
-            // };
-
-            // Initialize Firebase (ensure it's called only once)
-            // It's better to call this from a central place or ensure firebase.js handles the once-off init.
-            // For this example, we assume initFirebase is idempotent or checks itself.
-            // if (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY") {
-            //    initFirebase(firebaseConfig);
-            // } else {
-            //    console.warn("Firebase config is a placeholder in order.html. Update it to connect to Firebase.");
-            // }
-            // Note: initFirebase is called in firebase.js based on a global firebaseConfig.
-            // We need to define firebaseConfig here or ensure firebase.js has it.
-            // For simplicity, we'll rely on the user defining it in firebase.js as instructed.
-            // If initFirebase is not called yet, features will fail. A robust app would handle this better.
-
             const orderForm = document.getElementById('lemonadeOrderForm');
             const feedbackDiv = document.getElementById('formFeedback');
-            let isFirebaseInitialized = false; // Flag to ensure initFirebase is called only once effectively
+            const submitButton = orderForm.querySelector('button[type="submit"]');
 
-            // Try to initialize Firebase if config is available from firebase.js or globally
-            // This is a common pattern if firebase.js doesn't auto-init
-            if (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY" && typeof initFirebase === 'function') {
-                 if (initFirebase(firebaseConfig)) {
-                     isFirebaseInitialized = true;
-                 }
-            } else {
-                 console.warn("Firebase config is a placeholder or initFirebase not found. Update firebase.js or provide config here.");
-                 feedbackDiv.textContent = 'System configuration error. Cannot submit order.';
-                 feedbackDiv.className = 'text-red-400 p-2 rounded-md bg-red-900';
+            let firebaseReady = false;
+
+            try {
+                firebaseReady = initFirebase(); // Initialize Firebase from firebase.js
+                if (!firebaseReady) {
+                    throw new Error("Firebase initialization failed. Check console for details from firebase.js.");
+                }
+                console.log("Firebase initialized successfully in order.html.");
+            } catch (e) {
+                console.error("Firebase initialization error in order.html:", e);
+                feedbackDiv.textContent = 'System error: Cannot connect to order service. Please try again later.';
+                feedbackDiv.className = 'text-red-400 p-2 rounded-md bg-red-900';
+                if (submitButton) submitButton.disabled = true;
             }
-
 
             orderForm.addEventListener('submit', async function(event) {
                 event.preventDefault();
                 feedbackDiv.textContent = ''; // Clear previous feedback
 
-                if (!isFirebaseInitialized && typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY" && typeof initFirebase === 'function') {
-                    // Attempt to initialize again if it failed initially but config is now somehow available
-                    if (initFirebase(firebaseConfig)) {
-                        isFirebaseInitialized = true;
-                    }
+                if (!firebaseReady) {
+                    feedbackDiv.textContent = 'Order system is not available. Please try again later.';
+                    feedbackDiv.className = 'text-red-400 p-2 rounded-md bg-red-900';
+                    if (submitButton) submitButton.disabled = true; // Re-disable if it somehow got enabled
+                    return;
                 }
-
-                if (!isFirebaseInitialized && (typeof firebase === 'undefined' || !firebase.apps.length)) {
-                     feedbackDiv.textContent = 'Order system is not available. Please try again later. (Firebase not ready)';
-                     feedbackDiv.className = 'text-red-400 p-2 rounded-md bg-red-900';
-                     return;
-                }
-
 
                 const name = document.getElementById('customerName').value.trim();
                 const email = document.getElementById('customerEmail').value.trim();
@@ -172,15 +139,13 @@
                 try {
                     feedbackDiv.textContent = 'Submitting your order...';
                     feedbackDiv.className = 'text-yellow-300';
-
-                    // Ensure addOrder is available
-                    if (typeof addOrder !== 'function') {
-                        throw new Error("addOrder function is not available. Check firebase.js linkage.");
-                    }
+                    if (submitButton) submitButton.disabled = true;
 
                     await addOrder(orderData); // addOrder is from firebase.js
 
                     orderForm.reset(); // Clear the form
+                    if (submitButton) submitButton.disabled = false;
+
 
                     if (paymentMethod === "prepay") {
                         feedbackDiv.textContent = 'Order submitted successfully! Redirecting to payment...';
@@ -197,37 +162,10 @@
                     console.error('Error submitting order:', error);
                     feedbackDiv.textContent = `Error submitting order: ${error.message}. Please try again.`;
                     feedbackDiv.className = 'text-red-400 p-2 rounded-md bg-red-900';
+                    if (submitButton) submitButton.disabled = false;
                 }
             });
         });
-        // document.getElementById('lemonadeOrderForm').addEventListener('submit', function(event) {
-        //     event.preventDefault();
-        //     // Basic validation example (can be expanded)
-        //     const name = document.getElementById('customerName').value;
-        //     const email = document.getElementById('customerEmail').value;
-        //     const quantity = document.getElementById('quantity').value;
-        //     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
-        //     const feedbackDiv = document.getElementById('formFeedback');
-        //
-        //     if (!name || !email || !quantity || !paymentMethod) {
-        //         feedbackDiv.textContent = 'Please fill out all required fields.';
-        //         feedbackDiv.className = 'text-red-400';
-        //         return;
-        //     }
-        //
-        //     if (quantity < 1) {
-        //         feedbackDiv.textContent = 'Quantity must be at least 1.';
-        //         feedbackDiv.className = 'text-red-400';
-        //         return;
-        //     }
-        //
-        //     // If validation passes:
-        //     feedbackDiv.textContent = 'Order submitted successfully! (This is a placeholder)';
-        //     feedbackDiv.className = 'text-green-400';
-        //     console.log('Form data:', { name, email, quantity, paymentMethod: paymentMethod.value });
-        //     // In a real application, you would send this data to a server.
-        //     // this.reset(); // Optionally reset the form
-        // });
     </script>
 
 </body>
