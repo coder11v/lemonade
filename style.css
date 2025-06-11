@@ -1,0 +1,20 @@
+body {
+    /* Fallback dark theme for body if Tailwind classes are missing or not loaded */
+    background-color: #111827; /* Equivalent to Tailwind's bg-gray-900 */
+    color: #f3f4f6; /* Equivalent to Tailwind's text-gray-100 or a light gray */
+    font-family: 'Arial', sans-serif; /* Default font stack */
+}
+
+/* Additional global styles or overrides can be placed here if necessary */
+
+/* Example: Custom style for required indicator as seen in order.html,
+   if not handled by Tailwind or inline styles consistently.
+   This is just an example, already handled in order.html with <style> tag.
+*/
+/*
+.required-label::after {
+    content: '*';
+    color: #f56565; // red-500
+    margin-left: 0.25rem;
+}
+*/

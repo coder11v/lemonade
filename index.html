@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemonade Stand</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full text-center">
+        <h1 class="text-4xl font-bold text-yellow-400 mb-6">
+            Welcome to Our Lemonade Stand!
+        </h1>
+
+        <p class="text-lg text-gray-300 mb-8">
+            Quench your thirst with the best lemonade in town! Freshly squeezed, perfectly sweet, and served with a smile.
+            Whether you like it classic, pink, or with a hint of mint, we've got you covered.
+        </p>
+
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <a href="order.html"
+               class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-6 rounded-lg text-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Place an Order
+            </a>
+            <a href="admin.html"
+               class="bg-gray-700 hover:bg-gray-600 text-yellow-400 font-bold py-3 px-6 rounded-lg text-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Admin Portal
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

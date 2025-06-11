@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Lemonade - Lemonade Stand</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+        }
+        /* Custom style for required indicator */
+        .required-label::after {
+            content: '*';
+            color: #f56565; /* red-500 */
+            margin-left: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="bg-gray-800 p-8 rounded-lg shadow-xl max-w-lg w-full">
+        <h1 class="text-3xl font-bold text-yellow-400 mb-6 text-center">
+            Order Your Lemonade
+        </h1>
+
+        <form id="lemonadeOrderForm" class="space-y-6">
+            <div>
+                <label for="customerName" class="block text-sm font-medium text-gray-300 required-label">Full Name</label>
+                <input type="text" id="customerName" name="customerName" required
+                       class="mt-1 block w-full bg-gray-700 border-gray-600 text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm">
+            </div>
+
+            <div>
+                <label for="customerEmail" class="block text-sm font-medium text-gray-300 required-label">Email Address</label>
+                <input type="email" id="customerEmail" name="customerEmail" required
+                       class="mt-1 block w-full bg-gray-700 border-gray-600 text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm">
+            </div>
+
+            <div>
+                <label for="quantity" class="block text-sm font-medium text-gray-300 required-label">Quantity</label>
+                <input type="number" id="quantity" name="quantity" required min="1" value="1"
+                       class="mt-1 block w-full bg-gray-700 border-gray-600 text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm">
+            </div>
+
+            <fieldset>
+                <legend class="block text-sm font-medium text-gray-300 required-label mb-2">Payment Method</legend>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <input id="paymentPrepay" name="paymentMethod" type="radio" value="prepay" required
+                               class="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-500">
+                        <label for="paymentPrepay" class="ml-2 block text-sm text-gray-300">
+                            Prepay Online
+                        </label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="paymentCash" name="paymentMethod" type="radio" value="cash" required
+                               class="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-500">
+                        <label for="paymentCash" class="ml-2 block text-sm text-gray-300">
+                            Pay with Cash
+                        </label>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div>
+                <button type="submit"
+                        class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-4 rounded-lg text-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50">
+                    Submit Order
+                </button>
+            </div>
+        </form>
+
+        <!-- Placeholder for JavaScript form submission feedback -->
+        <div id="formFeedback" class="mt-4 text-center"></div>
+
+        <div class="mt-8 text-center">
+            <a href="index.html" class="text-yellow-400 hover:text-yellow-300 font-medium">
+                &larr; Back to Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <!-- Add SDKs for Firebase products that you want to use, e.g., Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- Link to your firebase.js file -->
+    <script src="firebase.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // TODO: Replace with your Firebase project's configuration object
+            // const firebaseConfig = {
+            //   apiKey: "YOUR_API_KEY",
+            //   authDomain: "YOUR_AUTH_DOMAIN",
+            //   projectId: "YOUR_PROJECT_ID",
+            //   storageBucket: "YOUR_STORAGE_BUCKET",
+            //   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            //   appId: "YOUR_APP_ID"
+            // };
+
+            // Initialize Firebase (ensure it's called only once)
+            // It's better to call this from a central place or ensure firebase.js handles the once-off init.
+            // For this example, we assume initFirebase is idempotent or checks itself.
+            // if (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            //    initFirebase(firebaseConfig);
+            // } else {
+            //    console.warn("Firebase config is a placeholder in order.html. Update it to connect to Firebase.");
+            // }
+            // Note: initFirebase is called in firebase.js based on a global firebaseConfig.
+            // We need to define firebaseConfig here or ensure firebase.js has it.
+            // For simplicity, we'll rely on the user defining it in firebase.js as instructed.
+            // If initFirebase is not called yet, features will fail. A robust app would handle this better.
+
+            const orderForm = document.getElementById('lemonadeOrderForm');
+            const feedbackDiv = document.getElementById('formFeedback');
+            let isFirebaseInitialized = false; // Flag to ensure initFirebase is called only once effectively
+
+            // Try to initialize Firebase if config is available from firebase.js or globally
+            // This is a common pattern if firebase.js doesn't auto-init
+            if (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY" && typeof initFirebase === 'function') {
+                 if (initFirebase(firebaseConfig)) {
+                     isFirebaseInitialized = true;
+                 }
+            } else {
+                 console.warn("Firebase config is a placeholder or initFirebase not found. Update firebase.js or provide config here.");
+                 feedbackDiv.textContent = 'System configuration error. Cannot submit order.';
+                 feedbackDiv.className = 'text-red-400 p-2 rounded-md bg-red-900';
+            }
+
+
+            orderForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                feedbackDiv.textContent = ''; // Clear previous feedback
+
+                if (!isFirebaseInitialized && typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY" && typeof initFirebase === 'function') {
+                    // Attempt to initialize again if it failed initially but config is now somehow available
+                    if (initFirebase(firebaseConfig)) {
+                        isFirebaseInitialized = true;
+                    }
+                }
+
+                if (!isFirebaseInitialized && (typeof firebase === 'undefined' || !firebase.apps.length)) {
+                     feedbackDiv.textContent = 'Order system is not available. Please try again later. (Firebase not ready)';
+                     feedbackDiv.className = 'text-red-400 p-2 rounded-md bg-red-900';
+                     return;
+                }
+
+
+                const name = document.getElementById('customerName').value.trim();
+                const email = document.getElementById('customerEmail').value.trim();
+                const quantity = parseInt(document.getElementById('quantity').value);
+                const paymentMethodRadio = document.querySelector('input[name="paymentMethod"]:checked');
+
+                if (!name || !email || !quantity || !paymentMethodRadio) {
+                    feedbackDiv.textContent = 'Please fill out all required fields.';
+                    feedbackDiv.className = 'text-red-400 p-2 rounded-md bg-red-900';
+                    return;
+                }
+
+                if (quantity < 1) {
+                    feedbackDiv.textContent = 'Quantity must be at least 1.';
+                    feedbackDiv.className = 'text-red-400 p-2 rounded-md bg-red-900';
+                    return;
+                }
+
+                const paymentMethod = paymentMethodRadio.value;
+                const orderData = { name, email, quantity, paymentMethod, status: "pending" };
+
+                try {
+                    feedbackDiv.textContent = 'Submitting your order...';
+                    feedbackDiv.className = 'text-yellow-300';
+
+                    // Ensure addOrder is available
+                    if (typeof addOrder !== 'function') {
+                        throw new Error("addOrder function is not available. Check firebase.js linkage.");
+                    }
+
+                    await addOrder(orderData); // addOrder is from firebase.js
+
+                    orderForm.reset(); // Clear the form
+
+                    if (paymentMethod === "prepay") {
+                        feedbackDiv.textContent = 'Order submitted successfully! Redirecting to payment...';
+                        feedbackDiv.className = 'text-green-400 p-2 rounded-md bg-green-900';
+                        setTimeout(() => {
+                            window.location.href = 'pay.html';
+                        }, 2000);
+                    } else { // Pay with Cash
+                        feedbackDiv.textContent = 'Thank you for your order! It has been submitted successfully.';
+                        feedbackDiv.className = 'text-green-400 p-2 rounded-md bg-green-900';
+                    }
+
+                } catch (error) {
+                    console.error('Error submitting order:', error);
+                    feedbackDiv.textContent = `Error submitting order: ${error.message}. Please try again.`;
+                    feedbackDiv.className = 'text-red-400 p-2 rounded-md bg-red-900';
+                }
+            });
+        });
+        // document.getElementById('lemonadeOrderForm').addEventListener('submit', function(event) {
+        //     event.preventDefault();
+        //     // Basic validation example (can be expanded)
+        //     const name = document.getElementById('customerName').value;
+        //     const email = document.getElementById('customerEmail').value;
+        //     const quantity = document.getElementById('quantity').value;
+        //     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+        //     const feedbackDiv = document.getElementById('formFeedback');
+        //
+        //     if (!name || !email || !quantity || !paymentMethod) {
+        //         feedbackDiv.textContent = 'Please fill out all required fields.';
+        //         feedbackDiv.className = 'text-red-400';
+        //         return;
+        //     }
+        //
+        //     if (quantity < 1) {
+        //         feedbackDiv.textContent = 'Quantity must be at least 1.';
+        //         feedbackDiv.className = 'text-red-400';
+        //         return;
+        //     }
+        //
+        //     // If validation passes:
+        //     feedbackDiv.textContent = 'Order submitted successfully! (This is a placeholder)';
+        //     feedbackDiv.className = 'text-green-400';
+        //     console.log('Form data:', { name, email, quantity, paymentMethod: paymentMethod.value });
+        //     // In a real application, you would send this data to a server.
+        //     // this.reset(); // Optionally reset the form
+        // });
+    </script>
+
+</body>
+</html>

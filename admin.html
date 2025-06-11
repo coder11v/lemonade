@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - Lemonade Stand</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+        }
+        #orders-list article {
+            border-bottom-width: 1px;
+        }
+        #orders-list article:last-child {
+            border-bottom-width: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-4">
+
+    <div class="bg-gray-800 p-8 rounded-lg shadow-xl max-w-2xl w-full">
+        <h1 class="text-3xl font-bold text-yellow-400 mb-6 text-center">
+            Admin Portal
+        </h1>
+
+        <div id="admin-content" class="space-y-4">
+            <!-- Orders will be displayed here if authenticated -->
+            <div id="orders-list-container" class="hidden">
+                <h2 class="text-2xl text-yellow-300 mb-4">Current Orders</h2>
+                <div id="orders-list" class="bg-gray-700 p-4 rounded-md shadow space-y-4 max-h-96 overflow-y-auto">
+                    <!-- Placeholder for where orders will be dynamically inserted -->
+                    <p class="text-gray-400 italic">Loading orders or no orders yet...</p>
+                </div>
+            </div>
+
+            <!-- Access denied message -->
+            <div id="access-denied" class="hidden text-center p-4 bg-red-800 border border-red-700 rounded-md">
+                <p class="text-xl font-semibold text-red-300">Access Denied!</p>
+                <p class="text-red-400">The password you entered is incorrect.</p>
+            </div>
+
+            <!-- Initial message / Prompt feedback -->
+            <div id="initial-message" class="text-center p-4">
+                <p class="text-gray-400">Attempting to authenticate...</p>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center">
+            <a href="index.html" class="text-yellow-400 hover:text-yellow-300 font-medium">
+                &larr; Back to Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <!-- Add SDKs for Firebase products that you want to use, e.g., Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- Link to your firebase.js file -->
+    <script src="firebase.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // TODO: Replace with your Firebase project's configuration object
+        // const firebaseConfig = {
+        //   apiKey: "YOUR_API_KEY",
+        //   authDomain: "YOUR_AUTH_DOMAIN",
+        //   projectId: "YOUR_PROJECT_ID",
+        //   storageBucket: "YOUR_STORAGE_BUCKET",
+        //   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        //   appId: "YOUR_APP_ID"
+        // };
+
+        const ordersListContainer = document.getElementById('orders-list-container');
+        const ordersListDiv = document.getElementById('orders-list');
+        const accessDeniedMessage = document.getElementById('access-denied');
+        const initialMessage = document.getElementById('initial-message');
+        let isFirebaseInitialized = false;
+
+        // Simplified Firebase Init Check for Admin
+        if (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY" && typeof initFirebase === 'function') {
+            if (initFirebase(firebaseConfig)) {
+                isFirebaseInitialized = true;
+            }
+        } else {
+            console.warn("Admin: Firebase config is a placeholder or initFirebase not found. Update firebase.js or provide config here.");
+            initialMessage.innerHTML = '<p class="text-red-400 p-2 rounded-md bg-red-900">Admin system configuration error. Cannot fetch orders.</p>';
+        }
+
+        async function displayOrders() {
+            if (!isFirebaseInitialized && (typeof firebase === 'undefined' || !firebase.apps.length)) {
+                ordersListDiv.innerHTML = '<p class="text-red-400 p-4">Error: Firebase is not configured or initialized. Cannot fetch orders.</p>';
+                return;
+            }
+
+            if (typeof getOrders !== 'function') {
+                ordersListDiv.innerHTML = '<p class="text-red-400 p-4">Error: getOrders function not found. Check firebase.js.</p>';
+                return;
+            }
+
+            try {
+                ordersListDiv.innerHTML = '<p class="text-gray-400 italic">Fetching orders...</p>';
+                const orders = await getOrders(); // From firebase.js
+
+                if (orders.length === 0) {
+                    ordersListDiv.innerHTML = '<p class="text-gray-300 p-4">No orders found.</p>';
+                } else {
+                    ordersListDiv.innerHTML = ''; // Clear loading message
+                    const ul = document.createElement('ul');
+                    ul.className = 'space-y-3';
+                    orders.forEach(order => {
+                        const li = document.createElement('li');
+                        li.className = 'p-3 bg-gray-600 rounded-md shadow';
+
+                        let paymentStatus = order.paymentMethod === 'prepay' ? 'Prepaid' : 'Pay with Cash';
+                        let orderStatus = order.status || 'Pending'; // Assuming 'status' field exists
+
+                        // Format timestamp if it exists
+                        let orderTime = 'N/A';
+                        if (order.createdAt && order.createdAt.toDate) {
+                            orderTime = order.createdAt.toDate().toLocaleString();
+                        } else if (order.createdAt) {
+                            // Fallback for different timestamp formats, might need adjustment
+                            orderTime = new Date(order.createdAt).toLocaleString();
+                        }
+
+                        li.innerHTML = `
+                            <div class="font-semibold text-yellow-300">Order ID: ${order.id}</div>
+                            <div class="text-sm text-gray-300">
+                                <p><strong>Name:</strong> ${escapeHTML(order.name)}</p>
+                                <p><strong>Email:</strong> ${escapeHTML(order.email)}</p>
+                                <p><strong>Quantity:</strong> ${order.quantity}</p>
+                                <p><strong>Payment:</strong> ${escapeHTML(paymentStatus)}</p>
+                                <p><strong>Status:</strong> ${escapeHTML(orderStatus)}</p>
+                                <p><strong>Ordered At:</strong> ${orderTime}</p>
+                            </div>
+                        `;
+                        ul.appendChild(li);
+                    });
+                    ordersListDiv.appendChild(ul);
+                }
+            } catch (error) {
+                console.error('Error fetching orders:', error);
+                ordersListDiv.innerHTML = `<p class="text-red-400 p-4">Error fetching orders: ${error.message}</p>`;
+            }
+        }
+
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/[&<>"']/g, function (match) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[match];
+            });
+        }
+
+        function authenticateAdmin() {
+            // Hide all sections initially
+            ordersListContainer.classList.add('hidden');
+            accessDeniedMessage.classList.add('hidden');
+            initialMessage.classList.remove('hidden'); // Show initial message
+
+            const password = prompt("Enter admin password:");
+
+            if (password === "lemonadee") {
+                initialMessage.classList.add('hidden');
+                ordersListContainer.classList.remove('hidden');
+                if (isFirebaseInitialized) {
+                    displayOrders();
+                } else {
+                    ordersListDiv.innerHTML = '<p class="text-red-400 p-4">Firebase is not configured. Cannot display orders. Please check console and firebase.js configuration.</p>';
+                }
+            } else if (password === null || password === "") {
+                initialMessage.innerHTML = '<p class="text-yellow-500 p-4">Authentication cancelled or no password entered.</p>';
+                accessDeniedMessage.classList.add('hidden');
+                ordersListContainer.classList.add('hidden');
+            } else {
+                initialMessage.classList.add('hidden');
+                accessDeniedMessage.classList.remove('hidden');
+                ordersListContainer.classList.add('hidden');
+            }
+        }
+
+        // Automatically run authentication when the page loads
+        authenticateAdmin();
+    });
+    </script>
+
+</body>
+</html>
