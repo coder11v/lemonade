@@ -18,6 +18,6 @@ This software is provided for personal viewing only.
 No license is granted for use or redistribution. For permissions, contact:
 
 **hi@veerbajaj.com**  
-More info: [https://veerbajaj.com/vib-license-v1.0](https://veerbajaj.com/vib-license-v1.0)
+More info: [https://veerbajaj.com/vib-license-v1.0](https://veerbajaj.com/vib-license-v1)
 
 Unauthorized use will be considered copyright infringement.
